@@ -4,6 +4,7 @@ import threading
 import asyncio
 from flask import Flask
 from telegram import Update
+from telegram.constants import ChatType
 from telegram.ext import (
     ApplicationBuilder, ContextTypes, MessageHandler,
     CommandHandler, filters
@@ -85,7 +86,7 @@ async def main():
     app = ApplicationBuilder().token(TOKEN).build()
 
     app.add_handler(CommandHandler("start", start_command))
-    app.add_handler(MessageHandler(filters.TEXT & filters.PRIVATE, handle_message))
+    app.add_handler(MessageHandler(filters.TEXT & filters.ChatType.PRIVATE, handle_message))
 
     app.job_queue.run_repeating(send_reminder, interval=10800, first=10)
 
