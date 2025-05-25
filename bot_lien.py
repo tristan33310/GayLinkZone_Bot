@@ -7,7 +7,7 @@ from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, Con
 TOKEN = os.environ["TELEGRAM_TOKEN"]
 GROUP_ID = int(os.environ["GROUP_ID"])
 OWNER_ID = int(os.environ["OWNER_ID"])
-WEBHOOK_URL = os.environ["WEBHOOK_URL"]  # à définir dans Render, par ex. https://ton-service.onrender.com/webhook
+WEBHOOK_URL = os.environ["WEBHOOK_URL"]  # ex. https://ton-service.onrender.com
 
 bot = Bot(token=TOKEN)
 
@@ -17,16 +17,6 @@ banned_terms = [
     "13 y/o", "p3d0", "péd0", "viol", "inceste", "twincest", "childlove", "boylove",
     "babylover", "jailbait", "gamin", "gamine", "childporn", "enfantnu", "nudekid"
 ]
-
-INFO_MESSAGE = (
-    "🔞 Gay Telegram links only. Adults 18+.\n"
-    "🚫 Forbidden content (will be reported and banned):\n"
-    "- CP / child-related content\n"
-    "- Zoophilia / bestiality\n"
-    "- Non-consensual material\n"
-    "- Any underage or illegal content\n"
-    "✅ To share a Telegram link, message the bot: @RainbowLinkHub_bot"
-)
 
 def normalize(text):
     return re.sub(r"[^a-z0-9]", "", text.lower())
@@ -54,7 +44,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_chat.type != "private":
         return
 
-    msg = update.message.text
+    msg = update.message.text.strip()
     user = update.effective_user
     username = user.username or user.first_name or str(user.id)
 
@@ -64,17 +54,17 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     if contains_telegram_link(msg):
-        text = f"🔗 {msg.strip()}"
-        await context.bot.send_message(chat_id=GROUP_ID, text=text)
+        await context.bot.send_message(chat_id=GROUP_ID, text=f"\n🔗 {msg}\n")
 
-# Flask app
+# --- FLASK CONFIG ---
 flask_app = Flask(__name__)
 application = ApplicationBuilder().token(TOKEN).build()
+
 application.add_handler(CommandHandler("start", start_command))
 application.add_handler(MessageHandler(filters.TEXT & filters.ChatType.PRIVATE, handle_message))
 
 @flask_app.route('/')
-def index():
+def home():
     return "Bot webhook actif !"
 
 @flask_app.route('/webhook', methods=['POST'])
@@ -83,12 +73,11 @@ def webhook():
     application.update_queue.put_nowait(update)
     return "OK", 200
 
-# Setup webhook on startup
 @flask_app.before_first_request
 def init_webhook():
     bot.delete_webhook()
     bot.set_webhook(f"{WEBHOOK_URL}/webhook")
 
-# Run Flask
+# --- LANCEMENT ---
 if __name__ == '__main__':
     flask_app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 10000)))
