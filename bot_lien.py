@@ -74,8 +74,8 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     if contains_telegram_link(msg):
-        await context.bot.send_message(chat_id=GROUP_ID, text=msg)
-        await context.bot.send_message(chat_id=GROUP_ID, text=INFO_MESSAGE)
+        formatted = f"\n\n🔗 {msg.strip()}\n\n"
+        await context.bot.send_message(chat_id=GROUP_ID, text=formatted)
 
 async def send_reminder(context: ContextTypes.DEFAULT_TYPE):
     await context.bot.send_message(chat_id=GROUP_ID, text=INFO_MESSAGE)
@@ -91,6 +91,5 @@ def start_bot():
     threading.Thread(target=run_flask).start()
     app.run_polling()
 
-# Exécution sans conflit d'event loop
 if __name__ == '__main__':
     start_bot()
