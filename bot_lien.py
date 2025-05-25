@@ -89,7 +89,7 @@ def start_bot():
     app.job_queue.run_repeating(send_reminder, interval=10800, first=10)
 
     threading.Thread(target=run_flask).start()
-    app.run_polling()
+    app.run_polling(allowed_updates=[])
 
 if __name__ == '__main__':
     start_bot()
