@@ -1,16 +1,15 @@
 import os
 import re
-import threading
-from flask import Flask
-from telegram import Update
-from telegram.ext import (
-    ApplicationBuilder, ContextTypes, MessageHandler,
-    CommandHandler, filters
-)
+from flask import Flask, request
+from telegram import Update, Bot
+from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, ContextTypes, filters
 
 TOKEN = os.environ["TELEGRAM_TOKEN"]
 GROUP_ID = int(os.environ["GROUP_ID"])
 OWNER_ID = int(os.environ["OWNER_ID"])
+WEBHOOK_URL = os.environ["WEBHOOK_URL"]  # à définir dans Render, par ex. https://ton-service.onrender.com/webhook
+
+bot = Bot(token=TOKEN)
 
 banned_terms = [
     "cp", "c.p", "c_p", "ped0", "pedo", "13yo", "14yo", "underage", "under4ge",
@@ -28,15 +27,6 @@ INFO_MESSAGE = (
     "- Any underage or illegal content\n"
     "✅ To share a Telegram link, message the bot: @RainbowLinkHub_bot"
 )
-
-flask_app = Flask(__name__)
-@flask_app.route('/')
-def index():
-    return "Bot actif !"
-
-def run_flask():
-    port = int(os.environ.get("PORT", 10000))
-    flask_app.run(host="0.0.0.0", port=port)
 
 def normalize(text):
     return re.sub(r"[^a-z0-9]", "", text.lower())
@@ -74,22 +64,31 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     if contains_telegram_link(msg):
-        formatted = f"\n\n🔗 {msg.strip()}\n\n"
-        await context.bot.send_message(chat_id=GROUP_ID, text=formatted)
+        text = f"🔗 {msg.strip()}"
+        await context.bot.send_message(chat_id=GROUP_ID, text=text)
 
-async def send_reminder(context: ContextTypes.DEFAULT_TYPE):
-    await context.bot.send_message(chat_id=GROUP_ID, text=INFO_MESSAGE)
+# Flask app
+flask_app = Flask(__name__)
+application = ApplicationBuilder().token(TOKEN).build()
+application.add_handler(CommandHandler("start", start_command))
+application.add_handler(MessageHandler(filters.TEXT & filters.ChatType.PRIVATE, handle_message))
 
-def start_bot():
-    app = ApplicationBuilder().token(TOKEN).build()
+@flask_app.route('/')
+def index():
+    return "Bot webhook actif !"
 
-    app.add_handler(CommandHandler("start", start_command))
-    app.add_handler(MessageHandler(filters.TEXT & filters.ChatType.PRIVATE, handle_message))
+@flask_app.route('/webhook', methods=['POST'])
+def webhook():
+    update = Update.de_json(request.get_json(force=True), bot)
+    application.update_queue.put_nowait(update)
+    return "OK", 200
 
-    app.job_queue.run_repeating(send_reminder, interval=10800, first=10)
+# Setup webhook on startup
+@flask_app.before_first_request
+def init_webhook():
+    bot.delete_webhook()
+    bot.set_webhook(f"{WEBHOOK_URL}/webhook")
 
-    threading.Thread(target=run_flask).start()
-    app.run_polling()
-
+# Run Flask
 if __name__ == '__main__':
-    start_bot()
+    flask_app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 10000)))
