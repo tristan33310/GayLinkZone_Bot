@@ -10,8 +10,10 @@ from telegram.ext import (
 )
 
 TOKEN = os.environ["TELEGRAM_TOKEN"]
-GROUP_ID = int(os.environ["GROUP_ID"])      
-OWNER_ID = int(os.environ["OWNER_ID"])       
+OWNER_ID = int(os.environ["OWNER_ID"])  # Ce champ est nécessaire pour recevoir l'ID du groupe
+
+# Valeur temporaire par défaut si GROUP_ID est inconnu
+GROUP_ID = int(os.environ.get("GROUP_ID", "0"))
 
 banned_terms = [
     "cp", "c.p", "c_p", "ped0", "pedo", "13yo", "14yo", "underage", "under4ge",
@@ -46,7 +48,7 @@ def has_banned_content(text):
     return any(term.replace(".", "") in normalize(text) for term in banned_terms)
 
 def contains_telegram_link(text):
-    return re.search(r"(https?://)?t\\.me/\\w+", text)
+    return re.search(r"(https?://)?t\.me/\w+", text)
 
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
@@ -62,44 +64,40 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if update.effective_chat.type != "private":
-        return
-
+    chat = update.effective_chat
     msg = update.message.text
     user = update.effective_user
     username = user.username or user.first_name or str(user.id)
 
-    print(f"chat_id utilisé ici: {update.effective_chat.id}")
+    # ✅ Message temporaire pour lire le chat_id :
+    await context.bot.send_message(chat_id=OWNER_ID, text=f"🔎 Chat ID détecté : {chat.id} | Type : {chat.type}")
 
-    print(f"[REÇU] De: {username} | Message: {msg}")
+    if chat.type != "private":
+        return
 
     # Envoi au propriétaire
     await context.bot.send_message(chat_id=OWNER_ID, text=f"📥 {username} → {msg}")
 
     if has_banned_content(msg):
-        print(f"[BLOQUÉ] Mot interdit détecté dans le message de {username}")
         return
 
     if contains_telegram_link(msg):
-        print(f"[PUBLIÉ] Lien Telegram validé par {username}")
         await context.bot.send_message(chat_id=GROUP_ID, text=msg)
         await context.bot.send_message(chat_id=GROUP_ID, text=INFO_MESSAGE)
-    else:
-        print(f"[IGNORÉ] Aucun lien valide dans le message de {username}")
 
 async def send_reminder(context: ContextTypes.DEFAULT_TYPE):
-    await context.bot.send_message(chat_id=GROUP_ID, text=INFO_MESSAGE)
+    if GROUP_ID != 0:
+        await context.bot.send_message(chat_id=GROUP_ID, text=INFO_MESSAGE)
 
 async def main():
     app = ApplicationBuilder().token(TOKEN).build()
 
     app.add_handler(CommandHandler("start", start_command))
-    app.add_handler(MessageHandler(filters.TEXT & filters.PRIVATE, handle_message))
+    app.add_handler(MessageHandler(filters.TEXT, handle_message))
 
     app.job_queue.run_repeating(send_reminder, interval=10800, first=10)
 
     threading.Thread(target=run_flask).start()
-    print("Bot running...")
     await app.run_polling()
 
 if __name__ == '__main__':
