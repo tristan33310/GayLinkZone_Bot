@@ -10,8 +10,8 @@ from telegram.ext import (
 )
 
 TOKEN = os.environ["TELEGRAM_TOKEN"]
-GROUP_ID = int(os.environ["GROUP_ID"])  # À définir dans Render
-# OWNER_ID = int(os.environ["OWNER_ID"])  # Décommente pour recevoir les logs par message
+GROUP_ID = int(os.environ["GROUP_ID"])      
+OWNER_ID = int(os.environ["OWNER_ID"])       
 
 banned_terms = [
     "cp", "c.p", "c_p", "ped0", "pedo", "13yo", "14yo", "underage", "under4ge",
@@ -71,7 +71,8 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     print(f"[REÇU] De: {username} | Message: {msg}")
 
-    # await context.bot.send_message(chat_id=OWNER_ID, text=f"[REÇU] {username} → {msg}")
+    # Envoi au propriétaire
+    await context.bot.send_message(chat_id=OWNER_ID, text=f"📥 {username} → {msg}")
 
     if has_banned_content(msg):
         print(f"[BLOQUÉ] Mot interdit détecté dans le message de {username}")
