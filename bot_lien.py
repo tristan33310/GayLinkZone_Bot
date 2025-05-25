@@ -69,6 +69,8 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     username = user.username or user.first_name or str(user.id)
 
+    print(f"chat_id utilisé ici: {update.effective_chat.id}")
+
     print(f"[REÇU] De: {username} | Message: {msg}")
 
     # Envoi au propriétaire
