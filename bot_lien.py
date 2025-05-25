@@ -1,10 +1,8 @@
 import os
 import re
 import threading
-import asyncio
 from flask import Flask
 from telegram import Update
-from telegram.constants import ChatType
 from telegram.ext import (
     ApplicationBuilder, ContextTypes, MessageHandler,
     CommandHandler, filters
@@ -82,7 +80,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def send_reminder(context: ContextTypes.DEFAULT_TYPE):
     await context.bot.send_message(chat_id=GROUP_ID, text=INFO_MESSAGE)
 
-async def main():
+def start_bot():
     app = ApplicationBuilder().token(TOKEN).build()
 
     app.add_handler(CommandHandler("start", start_command))
@@ -91,8 +89,8 @@ async def main():
     app.job_queue.run_repeating(send_reminder, interval=10800, first=10)
 
     threading.Thread(target=run_flask).start()
-    print("Bot running...")
-    await app.run_polling()
+    app.run_polling()
 
+# Exécution sans conflit d'event loop
 if __name__ == '__main__':
-    asyncio.run(main())
+    start_bot()
