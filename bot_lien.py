@@ -1,4 +1,3 @@
-import os
 import re
 import threading
 from flask import Flask
@@ -74,8 +73,8 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     if contains_telegram_link(msg):
-        formatted = f"\n\n🔗 {msg.strip()}\n\n"
-        await context.bot.send_message(chat_id=GROUP_ID, text=formatted)
+        await context.bot.send_message(chat_id=GROUP_ID, text=msg)
+        await context.bot.send_message(chat_id=GROUP_ID, text=INFO_MESSAGE)
 
 async def send_reminder(context: ContextTypes.DEFAULT_TYPE):
     await context.bot.send_message(chat_id=GROUP_ID, text=INFO_MESSAGE)
@@ -89,7 +88,8 @@ def start_bot():
     app.job_queue.run_repeating(send_reminder, interval=10800, first=10)
 
     threading.Thread(target=run_flask).start()
-    app.run_polling(allowed_updates=[])
+    app.run_polling()
 
+# Exécution sans conflit d'event loop
 if __name__ == '__main__':
     start_bot()
