@@ -1,5 +1,7 @@
 import os
 import re
+import asyncio
+import threading
 from flask import Flask, request
 from telegram import Update, Bot
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, ContextTypes, filters
@@ -78,6 +80,13 @@ def webhook():
 
 # --- LANCEMENT ---
 if __name__ == '__main__':
-    bot.delete_webhook()
-    bot.set_webhook(f"{WEBHOOK_URL}/webhook")
-    flask_app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 10000)))
+    def start_flask():
+        flask_app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 10000)))
+
+    def setup_webhook():
+        asyncio.run(bot.delete_webhook())
+        asyncio.run(bot.set_webhook(f"{WEBHOOK_URL}/webhook"))
+
+    setup_webhook()
+    threading.Thread(target=start_flask).start()
+    application.run_polling()
