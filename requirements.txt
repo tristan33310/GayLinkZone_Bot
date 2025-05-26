@@ -1,2 +1,2 @@
-python-telegram-bot[job-queue]==20.6
+python-telegram-bot[job-queue]==25.1.1
 Flask==2.3.3
