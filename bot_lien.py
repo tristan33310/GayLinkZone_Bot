@@ -38,7 +38,7 @@ def has_banned_content(text):
     return any(term.replace(".", "") in normalize(text) for term in banned_terms)
 
 def contains_telegram_link(text):
-    return re.search(r"(https?://)?t\.me/\w+", text)
+    return re.search(r"(https?://)?t\.me/[\w\d@+\-_/=]+", text)
 
 # --- STOCKAGE ID MESSAGE AUTO ---
 ID_FILE = "last_post_id.txt"
