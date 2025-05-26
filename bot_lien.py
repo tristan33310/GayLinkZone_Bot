@@ -7,8 +7,15 @@ from telegram.ext import (
     MessageHandler,
     ContextTypes,
     filters,
+    JobQueue,
 )
-from telegram.ext import JobQueue
+import logging
+
+# Configuration du journal pour le débogage
+logging.basicConfig(
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    level=logging.INFO
+)
 
 # --- ENV ---
 TOKEN = os.environ["TELEGRAM_TOKEN"]
@@ -35,18 +42,17 @@ def contains_telegram_link(text):
 
 # --- HANDLERS ---
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if update.effective_chat.type == "private":
-        await update.message.reply_text(
-            "👋 Welcome!\n"
-            "🔞 This bot only accepts Telegram links for adult content (18+).\n"
-            "🚫 Forbidden content:\n"
-            "- CP / child-related content\n"
-            "- Zoophilia\n"
-            "- Non-consensual material\n"
-            "- Any underage or illegal content\n"
-            "✅ To submit a link, just paste a valid Telegram link here\n"
-            "It will be published to the group if accepted."
-        )
+    await update.message.reply_text(
+        "👋 Welcome!\n"
+        "🔞 This bot only accepts Telegram links for adult content (18+).\n"
+        "🚫 Forbidden content:\n"
+        "- CP / child-related content\n"
+        "- Zoophilia\n"
+        "- Non-consensual material\n"
+        "- Any underage or illegal content\n"
+        "✅ To submit a link, just paste a valid Telegram link here\n"
+        "It will be published to the group if accepted."
+    )
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_chat.type != "private":
@@ -64,24 +70,24 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if contains_telegram_link(msg):
         await context.bot.send_message(chat_id=GROUP_ID, text=f"\n🔗 {msg}\n")
 
-# --- AUTO POST ---
-last_auto_post_id = None
+# --- MESSAGE RÉCURRENT ---
+last_message_id = None
 
 async def auto_post(context: ContextTypes.DEFAULT_TYPE):
-    global last_auto_post_id
+    global last_message_id
     # Supprimer le message précédent s'il existe
-    if last_auto_post_id:
+    if last_message_id:
         try:
-            await context.bot.delete_message(chat_id=GROUP_ID, message_id=last_auto_post_id)
-        except:
-            pass  # Ignorer les erreurs de suppression
+            await context.bot.delete_message(chat_id=GROUP_ID, message_id=last_message_id)
+        except Exception as e:
+            logging.warning(f"Erreur lors de la suppression du message précédent: {e}")
 
     # Envoyer le nouveau message
     message = await context.bot.send_message(
         chat_id=GROUP_ID,
         text="🔞 Gay Telegram links only. Adults 18+.\n\n✅ To share a Telegram link, message the bot: @RainbowLinkHub_bot"
     )
-    last_auto_post_id = message.message_id
+    last_message_id = message.message_id
 
 # --- MAIN ---
 if __name__ == "__main__":
@@ -90,7 +96,7 @@ if __name__ == "__main__":
     app.add_handler(CommandHandler("start", start_command))
     app.add_handler(MessageHandler(filters.TEXT & filters.ChatType.PRIVATE, handle_message))
 
-    # Planifier le message automatique toutes les 3 heures
+    # Planifier le message récurrent toutes les 3 heures
     job_queue: JobQueue = app.job_queue
     job_queue.run_repeating(auto_post, interval=3 * 60 * 60, first=1)
 
