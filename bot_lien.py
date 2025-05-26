@@ -25,10 +25,16 @@ WEBHOOK_URL = os.environ["WEBHOOK_URL"]
 
 # --- FILTRAGE ---
 banned_terms = [
-    "cp", "c.p", "c_p", "ped0", "pedo", "13yo", "14yo", "underage", "under4ge",
-    "lo.li", "loli", "preteen", "zoophile", "zoophilie", "mineur", "mineure",
-    "13 y/o", "p3d0", "péd0", "viol", "inceste", "twincest", "childlove", "boylove",
-    "babylover", "jailbait", "gamin", "gamine", "childporn", "enfantnu", "nudekid"
+    "cp", "c.p", "c_p", "ped0", "pedo", "p3d0", "péd0",
+    "13yo", "14yo", "underage", "under4ge", "preteen", "pre-teen",
+    "lolita", "loli", "lo.li", "lolicon",
+    "childlove", "boylove", "babylover", "jailbait",
+    "childporn", "childnude", "nudekid", "youngnude", "enfantnu",
+    "mineur", "mineure", "gamin", "gamine",
+    "incest", "inceste", "twincest",
+    "dadson", "dadandson", "daddyson", "fatherandson", "father+son",
+    "stepdad", "stepfather", "stepbrother", "stepson",
+    "nonconsensual", "rape", "viol"
 ]
 
 def normalize(text):
@@ -39,6 +45,12 @@ def has_banned_content(text):
 
 def contains_telegram_link(text):
     return re.search(r"(https?://)?t\.me/[\w\d@+\-_/=]+", text)
+
+# --- UTILISATEURS BLOQUÉS ---
+banned_users = [
+    # Ajoute ici les user_id à bloquer, exemple :
+    # 123456789,
+]
 
 # --- STOCKAGE ID MESSAGE AUTO ---
 ID_FILE = "last_post_id.txt"
@@ -76,7 +88,12 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     username = user.username or user.first_name or str(user.id)
 
-    # 🔁 Forward the original message to OWNER_ID
+    # ⛔ Ignore banned users
+    if user.id in banned_users:
+        await context.bot.send_message(chat_id=OWNER_ID, text=f"🚫 Ignored message from banned user {username} ({user.id})")
+        return
+
+    # 🔁 Forward to OWNER_ID
     try:
         await context.bot.forward_message(
             chat_id=OWNER_ID,
@@ -86,13 +103,18 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except Exception as e:
         logging.warning(f"Erreur lors du forward au OWNER_ID : {e}")
 
+    # 🔍 Filtrage
     if has_banned_content(msg):
         await update.message.reply_text("🚫 This link contains prohibited terms and will not be published.")
         await context.bot.send_message(chat_id=OWNER_ID, text=f"❌ Message from {username} was blocked.")
         return
 
     if contains_telegram_link(msg):
-        await context.bot.send_message(chat_id=GROUP_ID, text=f"‎\n‎\n🔗 {msg.strip()} \n‎\n‎")
+        await context.bot.send_message(
+            chat_id=GROUP_ID,
+            text=f"‎\n‎\n🔗 {msg.strip()} \n‎\n‎",
+            disable_web_page_preview=True
+        )
         await update.message.reply_text("✅ Your link has been published successfully.")
         await context.bot.send_message(chat_id=OWNER_ID, text=f"✅ Message from {username} was published.")
 
@@ -107,7 +129,8 @@ async def auto_post(context: ContextTypes.DEFAULT_TYPE):
 
     message = await context.bot.send_message(
         chat_id=GROUP_ID,
-        text="🔞 Gay Telegram links only. Adults 18+.\n\n✅ To share a Telegram link, message the bot: @RainbowLinkHub_bot"
+        text="🔞 Gay Telegram links only. Adults 18+.\n\n✅ To share a Telegram link, message the bot: @RainbowLinkHub_bot",
+        disable_web_page_preview=True
     )
     save_message_id(message.message_id)
 
