@@ -66,6 +66,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await context.bot.send_message(chat_id=OWNER_ID, text=f"📥 {username} → {msg}")
 
     if has_banned_content(msg):
+        await update.message.reply_text("🚫 Ce lien contient des termes interdits et ne sera pas publié.")
         return
 
     if contains_telegram_link(msg):
