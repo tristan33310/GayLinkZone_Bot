@@ -1,20 +1,19 @@
 import os
 import re
-import asyncio
-import threading
 from flask import Flask, request
 from telegram import Update, Bot
-from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, ContextTypes, filters
+from telegram.ext import Application, CommandHandler, MessageHandler, ContextTypes, filters
 
-# --- CONFIG ENV ---
+# --- CONFIGURATION ---
 TOKEN = os.environ["TELEGRAM_TOKEN"]
 GROUP_ID = int(os.environ["GROUP_ID"])
 OWNER_ID = int(os.environ["OWNER_ID"])
-WEBHOOK_URL = os.environ["WEBHOOK_URL"]  # ex. https://ton-service.onrender.com
+WEBHOOK_URL = os.environ["WEBHOOK_URL"]
 
-bot = Bot(token=TOKEN)
+# --- FLASK APP ---
+flask_app = Flask(__name__)
 
-# --- FILTRAGE ---
+# --- BOT SETUP ---
 banned_terms = [
     "cp", "c.p", "c_p", "ped0", "pedo", "13yo", "14yo", "underage", "under4ge",
     "lo.li", "loli", "preteen", "zoophile", "zoophilie", "mineur", "mineure",
@@ -31,7 +30,7 @@ def has_banned_content(text):
 def contains_telegram_link(text):
     return re.search(r"(https?://)?t\.me/\w+", text)
 
-# --- COMMANDES ---
+# --- HANDLERS ---
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
         "👋 Welcome!\n"
@@ -61,32 +60,30 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if contains_telegram_link(msg):
         await context.bot.send_message(chat_id=GROUP_ID, text=f"\n🔗 {msg}\n")
 
-# --- FLASK + TELEGRAM ---
-flask_app = Flask(__name__)
-application = ApplicationBuilder().token(TOKEN).build()
-
-application.add_handler(CommandHandler("start", start_command))
-application.add_handler(MessageHandler(filters.TEXT & filters.ChatType.PRIVATE, handle_message))
-
-@flask_app.route('/')
+# --- WEBHOOK ROUTE ---
+@flask_app.route("/")
 def home():
     return "Bot webhook actif !"
 
-@flask_app.route('/webhook', methods=['POST'])
+@flask_app.route("/webhook", methods=["POST"])
 def webhook():
     update = Update.de_json(request.get_json(force=True), bot)
     application.update_queue.put_nowait(update)
     return "OK", 200
 
-# --- LANCEMENT ---
-if __name__ == '__main__':
-    def start_flask():
-        flask_app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 10000)))
+# --- MAIN EXECUTION ---
+bot = Bot(token=TOKEN)
+application = Application.builder().token(TOKEN).build()
 
-    def setup_webhook():
-        asyncio.run(bot.delete_webhook())
-        asyncio.run(bot.set_webhook(f"{WEBHOOK_URL}/webhook"))
+application.add_handler(CommandHandler("start", start_command))
+application.add_handler(MessageHandler(filters.TEXT & filters.ChatType.PRIVATE, handle_message))
 
-    setup_webhook()
-    threading.Thread(target=start_flask).start()
-    application.run_polling()
+async def set_webhook():
+    await bot.delete_webhook()
+    await bot.set_webhook(url=f"{WEBHOOK_URL}/webhook")
+
+if __name__ == "__main__":
+    import asyncio
+
+    asyncio.run(set_webhook())
+    flask_app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 10000)))
