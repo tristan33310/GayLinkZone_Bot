@@ -1,7 +1,6 @@
 import os
 import re
-import asyncio
-from telegram import Update, Bot, Message
+from telegram import Update, Bot
 from telegram.ext import (
     ApplicationBuilder,
     CommandHandler,
@@ -36,8 +35,6 @@ def contains_telegram_link(text):
 
 # --- HANDLERS ---
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if update.effective_chat.type != "private":
-        return
     await update.message.reply_text(
         "👋 Welcome!\n"
         "🔞 This bot only accepts Telegram links for adult content (18+).\n"
@@ -66,24 +63,22 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if contains_telegram_link(msg):
         await context.bot.send_message(chat_id=GROUP_ID, text=f"\n🔗 {msg}\n")
 
-# --- AUTO MESSAGE DANS LE GROUPE ---
-last_auto_message: Message = None
+# --- AUTO POST ---
+last_message_id = None
 
 async def auto_post(context: ContextTypes.DEFAULT_TYPE):
-    global last_auto_message
-
-    if last_auto_message:
+    global last_message_id
+    if last_message_id:
         try:
-            await last_auto_message.delete()
+            await context.bot.delete_message(chat_id=GROUP_ID, message_id=last_message_id)
         except:
-            pass
+            pass  # Ignore if message doesn't exist or can't be deleted
 
-    text = (
-        "🔞 Gay Telegram links only. Adults 18+.\n\n"
-        "✅ To share a Telegram link, message the bot: @RainbowLinkHub_bot"
+    message = await context.bot.send_message(
+        chat_id=GROUP_ID,
+        text="🔞 Gay Telegram links only. Adults 18+.\n\n✅ To share a Telegram link, message the bot: @RainbowLinkHub_bot"
     )
-
-    last_auto_message = await context.bot.send_message(chat_id=GROUP_ID, text=text)
+    last_message_id = message.message_id
 
 # --- MAIN ---
 if __name__ == "__main__":
@@ -92,11 +87,13 @@ if __name__ == "__main__":
     app.add_handler(CommandHandler("start", start_command))
     app.add_handler(MessageHandler(filters.TEXT & filters.ChatType.PRIVATE, handle_message))
 
-    job_queue: JobQueue = app.job_queue
-    job_queue.run_repeating(auto_post, interval=3 * 60 * 60, first=1)
-
+    # Démarrage avec webhook (Render)
     app.run_webhook(
         listen="0.0.0.0",
         port=int(os.environ.get("PORT", 10000)),
         webhook_url=f"{WEBHOOK_URL}/webhook"
     )
+
+    # Planification du message automatique toutes les 3 heures
+    job_queue = app.job_queue
+    job_queue.run_repeating(auto_post, interval=3 * 60 * 60, first=1)
