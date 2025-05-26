@@ -1,5 +1,6 @@
 import os
 import re
+import logging
 from telegram import Update
 from telegram.ext import (
     ApplicationBuilder,
@@ -7,14 +8,11 @@ from telegram.ext import (
     MessageHandler,
     ContextTypes,
     filters,
-    JobQueue,
 )
-import logging
 
-# Configuration du journal pour le débogage
+# --- LOGGING ---
 logging.basicConfig(
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    level=logging.INFO
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
 )
 
 # --- ENV ---
@@ -70,19 +68,17 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if contains_telegram_link(msg):
         await context.bot.send_message(chat_id=GROUP_ID, text=f"\n🔗 {msg}\n")
 
-# --- MESSAGE RÉCURRENT ---
+# --- RÉPÉTITION ---
 last_message_id = None
 
 async def auto_post(context: ContextTypes.DEFAULT_TYPE):
     global last_message_id
-    # Supprimer le message précédent s'il existe
-    if last_message_id:
-        try:
+    try:
+        if last_message_id:
             await context.bot.delete_message(chat_id=GROUP_ID, message_id=last_message_id)
-        except Exception as e:
-            logging.warning(f"Erreur lors de la suppression du message précédent: {e}")
+    except Exception as e:
+        logging.warning(f"Suppression échouée : {e}")
 
-    # Envoyer le nouveau message
     message = await context.bot.send_message(
         chat_id=GROUP_ID,
         text="🔞 Gay Telegram links only. Adults 18+.\n\n✅ To share a Telegram link, message the bot: @RainbowLinkHub_bot"
@@ -90,19 +86,28 @@ async def auto_post(context: ContextTypes.DEFAULT_TYPE):
     last_message_id = message.message_id
 
 # --- MAIN ---
-if __name__ == "__main__":
+async def main():
     app = ApplicationBuilder().token(TOKEN).build()
 
     app.add_handler(CommandHandler("start", start_command))
     app.add_handler(MessageHandler(filters.TEXT & filters.ChatType.PRIVATE, handle_message))
 
-    # Planifier le message récurrent toutes les 3 heures
-    job_queue: JobQueue = app.job_queue
-    job_queue.run_repeating(auto_post, interval=3 * 60 * 60, first=1)
+    # Initialiser l'application pour pouvoir utiliser JobQueue
+    await app.initialize()
 
-    # Démarrage avec webhook (Render)
-    app.run_webhook(
+    # Planifier les tâches périodiques
+    app.job_queue.run_repeating(auto_post, interval=3 * 60 * 60, first=1)
+
+    # Démarrer le webhook
+    await app.start()
+    await app.updater.start_webhook(
         listen="0.0.0.0",
         port=int(os.environ.get("PORT", 10000)),
-        webhook_url=f"{WEBHOOK_URL}/webhook"
+        webhook_url=f"{WEBHOOK_URL}/webhook",
     )
+
+    await app.updater.wait_until_closed()
+
+if __name__ == "__main__":
+    import asyncio
+    asyncio.run(main())
