@@ -7,3 +7,9 @@ services:
     envVars:
       - key: TELEGRAM_TOKEN
         sync: false
+      - key: GROUP_ID
+        sync: false
+      - key: OWNER_ID
+        sync: false
+      - key: WEBHOOK_URL
+        sync: false
