@@ -1,9 +1,14 @@
 import os
 import re
-from telegram import Update
+import asyncio
+from telegram import Update, Bot, Message
 from telegram.ext import (
-    ApplicationBuilder, CommandHandler,
-    MessageHandler, ContextTypes, filters
+    ApplicationBuilder,
+    CommandHandler,
+    MessageHandler,
+    ContextTypes,
+    filters,
+    JobQueue,
 )
 
 # --- ENV ---
@@ -31,6 +36,8 @@ def contains_telegram_link(text):
 
 # --- HANDLERS ---
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if update.effective_chat.type != "private":
+        return
     await update.message.reply_text(
         "👋 Welcome!\n"
         "🔞 This bot only accepts Telegram links for adult content (18+).\n"
@@ -39,7 +46,7 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "- Zoophilia\n"
         "- Non-consensual material\n"
         "- Any underage or illegal content\n"
-        "✅ To submit a link, just paste a valid Telegram link here (e.g. https://t.me/example)\n"
+        "✅ To submit a link, just paste a valid Telegram link here\n"
         "It will be published to the group if accepted."
     )
 
@@ -59,6 +66,25 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if contains_telegram_link(msg):
         await context.bot.send_message(chat_id=GROUP_ID, text=f"\n🔗 {msg}\n")
 
+# --- AUTO MESSAGE DANS LE GROUPE ---
+last_auto_message: Message = None
+
+async def auto_post(context: ContextTypes.DEFAULT_TYPE):
+    global last_auto_message
+
+    if last_auto_message:
+        try:
+            await last_auto_message.delete()
+        except:
+            pass
+
+    text = (
+        "🔞 Gay Telegram links only. Adults 18+.\n\n"
+        "✅ To share a Telegram link, message the bot: @RainbowLinkHub_bot"
+    )
+
+    last_auto_message = await context.bot.send_message(chat_id=GROUP_ID, text=text)
+
 # --- MAIN ---
 if __name__ == "__main__":
     app = ApplicationBuilder().token(TOKEN).build()
@@ -66,10 +92,11 @@ if __name__ == "__main__":
     app.add_handler(CommandHandler("start", start_command))
     app.add_handler(MessageHandler(filters.TEXT & filters.ChatType.PRIVATE, handle_message))
 
-    # Démarrage avec webhook (Render)
+    job_queue: JobQueue = app.job_queue
+    job_queue.run_repeating(auto_post, interval=3 * 60 * 60, first=1)
+
     app.run_webhook(
         listen="0.0.0.0",
         port=int(os.environ.get("PORT", 10000)),
-        webhook_url=f"{WEBHOOK_URL}/{TOKEN}",
-        url_path=TOKEN
+        webhook_url=f"{WEBHOOK_URL}/webhook"
     )
