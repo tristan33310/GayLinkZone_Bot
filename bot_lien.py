@@ -76,16 +76,18 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     username = user.username or user.first_name or str(user.id)
 
-    # Message au propriétaire
-    await context.bot.send_message(chat_id=OWNER_ID, text=f"📥 {username} → {msg}")
+    # 🔁 Copier tout message reçu au OWNER_ID
+    await context.bot.send_message(chat_id=OWNER_ID, text=f"📥 Message from {username} ({user.id}):\n{msg}")
 
     if has_banned_content(msg):
         await update.message.reply_text("🚫 This link contains prohibited terms and will not be published.")
+        await context.bot.send_message(chat_id=OWNER_ID, text=f"❌ Message from {username} was blocked.")
         return
 
     if contains_telegram_link(msg):
         await context.bot.send_message(chat_id=GROUP_ID, text=f"‎\n‎\n🔗 {msg.strip()} \n‎\n‎")
         await update.message.reply_text("✅ Your link has been published successfully.")
+        await context.bot.send_message(chat_id=OWNER_ID, text=f"✅ Message from {username} was published.")
 
 # --- MESSAGE RÉCURRENT ---
 async def auto_post(context: ContextTypes.DEFAULT_TYPE):
