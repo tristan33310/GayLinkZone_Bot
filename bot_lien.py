@@ -8,11 +8,13 @@ from telegram.ext import (
     MessageHandler,
     ContextTypes,
     filters,
+    JobQueue,
 )
 
 # --- LOGGING ---
 logging.basicConfig(
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    level=logging.INFO
 )
 
 # --- ENV ---
@@ -60,6 +62,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     username = user.username or user.first_name or str(user.id)
 
+    # Message au propriétaire
     await context.bot.send_message(chat_id=OWNER_ID, text=f"📥 {username} → {msg}")
 
     if has_banned_content(msg):
@@ -68,7 +71,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if contains_telegram_link(msg):
         await context.bot.send_message(chat_id=GROUP_ID, text=f"\n🔗 {msg}\n")
 
-# --- RÉPÉTITION ---
+# --- MESSAGE RÉCURRENT ---
 last_message_id = None
 
 async def auto_post(context: ContextTypes.DEFAULT_TYPE):
@@ -77,7 +80,7 @@ async def auto_post(context: ContextTypes.DEFAULT_TYPE):
         if last_message_id:
             await context.bot.delete_message(chat_id=GROUP_ID, message_id=last_message_id)
     except Exception as e:
-        logging.warning(f"Suppression échouée : {e}")
+        logging.warning(f"Erreur suppression message: {e}")
 
     message = await context.bot.send_message(
         chat_id=GROUP_ID,
@@ -86,28 +89,21 @@ async def auto_post(context: ContextTypes.DEFAULT_TYPE):
     last_message_id = message.message_id
 
 # --- MAIN ---
-async def main():
+if __name__ == "__main__":
     app = ApplicationBuilder().token(TOKEN).build()
 
+    # HANDLERS
     app.add_handler(CommandHandler("start", start_command))
     app.add_handler(MessageHandler(filters.TEXT & filters.ChatType.PRIVATE, handle_message))
 
-    # Initialiser l'application pour pouvoir utiliser JobQueue
-    await app.initialize()
+    # JOB SCHEDULER
+    job_queue: JobQueue = app.job_queue
+    job_queue.run_repeating(auto_post, interval=3 * 60 * 60, first=5)
 
-    # Planifier les tâches périodiques
-    app.job_queue.run_repeating(auto_post, interval=3 * 60 * 60, first=1)
-
-    # Démarrer le webhook
-    await app.start()
-    await app.updater.start_webhook(
+    # WEBHOOK (Render)
+    app.run_webhook(
         listen="0.0.0.0",
         port=int(os.environ.get("PORT", 10000)),
-        webhook_url=f"{WEBHOOK_URL}/webhook",
+        webhook_url=f"{WEBHOOK_URL}",
+        webhook_path="/"  # essentiel pour Telegram
     )
-
-    await app.updater.wait_until_closed()
-
-if __name__ == "__main__":
-    import asyncio
-    asyncio.run(main())
