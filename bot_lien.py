@@ -69,7 +69,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     if contains_telegram_link(msg):
-        await context.bot.send_message(chat_id=GROUP_ID, text=f"\n🔗 {msg}\n")
+        await context.bot.send_message(chat_id=GROUP_ID, text=f"‎\n‎\n🔗 {msg.strip()} \n‎\n‎")
 
 # --- MESSAGE RÉCURRENT ---
 last_message_id = None
