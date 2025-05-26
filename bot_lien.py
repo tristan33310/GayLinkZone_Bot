@@ -76,8 +76,15 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     username = user.username or user.first_name or str(user.id)
 
-    # 🔁 Copier tout message reçu au OWNER_ID
-    await context.bot.send_message(chat_id=OWNER_ID, text=f"📥 Message from {username} ({user.id}):\n{msg}")
+    # 🔁 Forward the original message to OWNER_ID
+    try:
+        await context.bot.forward_message(
+            chat_id=OWNER_ID,
+            from_chat_id=update.effective_chat.id,
+            message_id=update.message.message_id
+        )
+    except Exception as e:
+        logging.warning(f"Erreur lors du forward au OWNER_ID : {e}")
 
     if has_banned_content(msg):
         await update.message.reply_text("🚫 This link contains prohibited terms and will not be published.")
