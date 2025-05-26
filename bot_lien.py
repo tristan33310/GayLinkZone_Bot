@@ -1,13 +1,12 @@
 import os
 import re
-from telegram import Update, Bot
+from telegram import Update
 from telegram.ext import (
     ApplicationBuilder,
     CommandHandler,
     MessageHandler,
     ContextTypes,
     filters,
-    JobQueue,
 )
 
 # --- ENV ---
@@ -61,7 +60,8 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     if contains_telegram_link(msg):
-        await context.bot.send_message(chat_id=GROUP_ID, text=f"\n🔗 {msg}\n")
+        formatted_msg = f" 🔗 {msg} "
+        await context.bot.send_message(chat_id=GROUP_ID, text=formatted_msg)
 
 # --- AUTO POST ---
 last_message_id = None
@@ -87,13 +87,12 @@ if __name__ == "__main__":
     app.add_handler(CommandHandler("start", start_command))
     app.add_handler(MessageHandler(filters.TEXT & filters.ChatType.PRIVATE, handle_message))
 
+    # Planification du message automatique toutes les 3 heures
+    app.job_queue.run_repeating(auto_post, interval=3 * 60 * 60, first=10)
+
     # Démarrage avec webhook (Render)
     app.run_webhook(
         listen="0.0.0.0",
         port=int(os.environ.get("PORT", 10000)),
         webhook_url=f"{WEBHOOK_URL}/webhook"
     )
-
-    # Planification du message automatique toutes les 3 heures
-    job_queue = app.job_queue
-    job_queue.run_repeating(auto_post, interval=3 * 60 * 60, first=1)
