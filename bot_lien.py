@@ -1,19 +1,15 @@
 import os
 import re
-from flask import Flask, request
 from telegram import Update, Bot
-from telegram.ext import Application, CommandHandler, MessageHandler, ContextTypes, filters
+from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, ContextTypes, filters
 
-# --- CONFIGURATION ---
+# --- ENV ---
 TOKEN = os.environ["TELEGRAM_TOKEN"]
 GROUP_ID = int(os.environ["GROUP_ID"])
 OWNER_ID = int(os.environ["OWNER_ID"])
 WEBHOOK_URL = os.environ["WEBHOOK_URL"]
 
-# --- FLASK APP ---
-flask_app = Flask(__name__)
-
-# --- BOT SETUP ---
+# --- FILTRAGE ---
 banned_terms = [
     "cp", "c.p", "c_p", "ped0", "pedo", "13yo", "14yo", "underage", "under4ge",
     "lo.li", "loli", "preteen", "zoophile", "zoophilie", "mineur", "mineure",
@@ -60,30 +56,16 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if contains_telegram_link(msg):
         await context.bot.send_message(chat_id=GROUP_ID, text=f"\n🔗 {msg}\n")
 
-# --- WEBHOOK ROUTE ---
-@flask_app.route("/")
-def home():
-    return "Bot webhook actif !"
-
-@flask_app.route("/webhook", methods=["POST"])
-def webhook():
-    update = Update.de_json(request.get_json(force=True), bot)
-    application.update_queue.put_nowait(update)
-    return "OK", 200
-
-# --- MAIN EXECUTION ---
-bot = Bot(token=TOKEN)
-application = Application.builder().token(TOKEN).build()
-
-application.add_handler(CommandHandler("start", start_command))
-application.add_handler(MessageHandler(filters.TEXT & filters.ChatType.PRIVATE, handle_message))
-
-async def set_webhook():
-    await bot.delete_webhook()
-    await bot.set_webhook(url=f"{WEBHOOK_URL}/webhook")
-
+# --- MAIN ---
 if __name__ == "__main__":
-    import asyncio
+    app = ApplicationBuilder().token(TOKEN).build()
 
-    asyncio.run(set_webhook())
-    flask_app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 10000)))
+    app.add_handler(CommandHandler("start", start_command))
+    app.add_handler(MessageHandler(filters.TEXT & filters.ChatType.PRIVATE, handle_message))
+
+    # Démarrage avec webhook (Render)
+    app.run_webhook(
+        listen="0.0.0.0",
+        port=int(os.environ.get("PORT", 10000)),
+        webhook_url=f"{WEBHOOK_URL}/webhook"
+    )
