@@ -1,7 +1,10 @@
 import os
 import re
-from telegram import Update, Bot
-from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, ContextTypes, filters
+from telegram import Update
+from telegram.ext import (
+    ApplicationBuilder, CommandHandler,
+    MessageHandler, ContextTypes, filters
+)
 
 # --- ENV ---
 TOKEN = os.environ["TELEGRAM_TOKEN"]
@@ -67,5 +70,6 @@ if __name__ == "__main__":
     app.run_webhook(
         listen="0.0.0.0",
         port=int(os.environ.get("PORT", 10000)),
-        webhook_url=f"{WEBHOOK_URL}/webhook"
+        webhook_url=f"{WEBHOOK_URL}/{TOKEN}",
+        url_path=TOKEN
     )
