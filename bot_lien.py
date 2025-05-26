@@ -40,6 +40,20 @@ def has_banned_content(text):
 def contains_telegram_link(text):
     return re.search(r"(https?://)?t\.me/\w+", text)
 
+# --- STOCKAGE ID MESSAGE AUTO ---
+ID_FILE = "last_post_id.txt"
+
+def save_message_id(msg_id):
+    with open(ID_FILE, "w") as f:
+        f.write(str(msg_id))
+
+def load_message_id():
+    try:
+        with open(ID_FILE, "r") as f:
+            return int(f.read().strip())
+    except:
+        return None
+
 # --- HANDLERS ---
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
@@ -74,13 +88,11 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("✅ Your link has been published successfully.")
 
 # --- MESSAGE RÉCURRENT ---
-last_message_id = None
-
 async def auto_post(context: ContextTypes.DEFAULT_TYPE):
-    global last_message_id
+    old_id = load_message_id()
     try:
-        if last_message_id:
-            await context.bot.delete_message(chat_id=GROUP_ID, message_id=last_message_id)
+        if old_id:
+            await context.bot.delete_message(chat_id=GROUP_ID, message_id=old_id)
     except Exception as e:
         logging.warning(f"Erreur suppression message: {e}")
 
@@ -88,7 +100,7 @@ async def auto_post(context: ContextTypes.DEFAULT_TYPE):
         chat_id=GROUP_ID,
         text="🔞 Gay Telegram links only. Adults 18+.\n\n✅ To share a Telegram link, message the bot: @RainbowLinkHub_bot"
     )
-    last_message_id = message.message_id
+    save_message_id(message.message_id)
 
 # --- MAIN ---
 if __name__ == "__main__":
