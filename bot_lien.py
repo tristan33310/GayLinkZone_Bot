@@ -4,6 +4,7 @@ from flask import Flask, request
 from telegram import Update, Bot
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, ContextTypes, filters
 
+# --- CONFIG ENV ---
 TOKEN = os.environ["TELEGRAM_TOKEN"]
 GROUP_ID = int(os.environ["GROUP_ID"])
 OWNER_ID = int(os.environ["OWNER_ID"])
@@ -11,6 +12,7 @@ WEBHOOK_URL = os.environ["WEBHOOK_URL"]  # ex. https://ton-service.onrender.com
 
 bot = Bot(token=TOKEN)
 
+# --- FILTRAGE ---
 banned_terms = [
     "cp", "c.p", "c_p", "ped0", "pedo", "13yo", "14yo", "underage", "under4ge",
     "lo.li", "loli", "preteen", "zoophile", "zoophilie", "mineur", "mineure",
@@ -27,6 +29,7 @@ def has_banned_content(text):
 def contains_telegram_link(text):
     return re.search(r"(https?://)?t\.me/\w+", text)
 
+# --- COMMANDES ---
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
         "👋 Welcome!\n"
@@ -56,7 +59,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if contains_telegram_link(msg):
         await context.bot.send_message(chat_id=GROUP_ID, text=f"\n🔗 {msg}\n")
 
-# --- FLASK CONFIG ---
+# --- FLASK + TELEGRAM ---
 flask_app = Flask(__name__)
 application = ApplicationBuilder().token(TOKEN).build()
 
@@ -73,11 +76,8 @@ def webhook():
     application.update_queue.put_nowait(update)
     return "OK", 200
 
-@flask_app.before_first_request
-def init_webhook():
-    bot.delete_webhook()
-    bot.set_webhook(f"{WEBHOOK_URL}/webhook")
-
 # --- LANCEMENT ---
 if __name__ == '__main__':
+    bot.delete_webhook()
+    bot.set_webhook(f"{WEBHOOK_URL}/webhook")
     flask_app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 10000)))
