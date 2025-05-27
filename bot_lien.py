@@ -70,14 +70,26 @@ def load_message_id():
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
         "👋 Welcome!\n"
-        "🔞 This bot only accepts Telegram links for adult content (18+).\n"
-        "🚫 Forbidden content:\n"
-        "- CP / child-related content\n"
-        "- Zoophilia\n"
-        "- Non-consensual material\n"
-        "- Any underage or illegal content\n"
-        "✅ To submit a link, just paste a valid Telegram link here\n"
-        "It will be published to the group if accepted."
+        "🔞 This bot is intended solely for sharing Gay Telegram links with adult content (18+).\n"
+        "\n"
+        "🤖 This bot does not reply to messages. It is only designed to receive valid Telegram links.\n"
+        "🚫 No external links (social media, websites, file hosts, etc.) will be accepted.\n"
+        "\n"
+        "🚫 Strictly prohibited content:\n"
+        "- Any material involving minors (CP or any child-related content, real or fictional)\n"
+        "- Zoophilia or bestiality\n"
+        "- Non-consensual content (rape, voyeurism, revenge porn, etc.)\n"
+        "- Extreme violence or mutilation\n"
+        "- Gore or macabre content\n"
+        "- Threats, harassment, or doxxing\n"
+        "- Identity theft or impersonation\n"
+        "- Terrorist or extremist propaganda\n"
+        "- Sale of drugs or weapons\n"
+        "- Scams or fraudulent content\n"
+        "- Any content that violates laws or Telegram’s Terms of Service\n"
+        "\n"
+        "✅ To submit a link, simply paste a valid Telegram link here.\n"
+        "If accepted, it will be published to the group. 
     )
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -129,8 +141,10 @@ async def auto_post(context: ContextTypes.DEFAULT_TYPE):
 
     message = await context.bot.send_message(
         chat_id=GROUP_ID,
-        text="🔞 Gay Telegram links only. Adults 18+.\n\n✅ To share a Telegram link, message the bot: @RainbowLinkHub_bot",
-        disable_web_page_preview=True
+        text="\n\n🔞 Gay Telegram links only. Adults 18+.\n"
+            "This is a participative project — feel free to share your best Telegram link!\n\n"
+            "✅ To share a Telegram link, message the bot: @RainbowLinkHub_bot",
+            disable_web_page_preview=True\n\n
     )
     save_message_id(message.message_id)
 
