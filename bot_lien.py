@@ -89,7 +89,7 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "- Any content that violates laws or Telegram’s Terms of Service\n"
         "\n"
         "✅ To submit a link, simply paste a valid Telegram link here.\n"
-        "If accepted, it will be published to the group. 
+        "If accepted, it will be published to the group." 
     )
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
