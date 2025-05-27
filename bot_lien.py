@@ -141,7 +141,7 @@ async def auto_post(context: ContextTypes.DEFAULT_TYPE):
 
     message = await context.bot.send_message(
         chat_id=GROUP_ID,
-        text="\n\n🔞 Gay Telegram links only. Adults 18+.\n"
+        text="\n\n🔞 Gay Telegram links only. Adults 18+.\n\n"
             "This is a participative project — feel free to share your best Telegram link!\n\n"
             "✅ To share a Telegram link, message the bot: @RainbowLinkHub_bot",
             disable_web_page_preview=True
