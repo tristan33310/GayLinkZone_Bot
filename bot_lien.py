@@ -1,6 +1,8 @@
 import os
 import re
 import logging
+import threading
+from flask import Flask
 from telegram import Update
 from telegram.ext import (
     ApplicationBuilder,
@@ -22,6 +24,13 @@ TOKEN = os.environ["TELEGRAM_TOKEN"]
 GROUP_ID = int(os.environ["GROUP_ID"])
 OWNER_ID = int(os.environ["OWNER_ID"])
 WEBHOOK_URL = os.environ["WEBHOOK_URL"]
+
+# --- KEEP-ALIVE HTTP ROUTE ---
+status_app = Flask(__name__)
+
+@status_app.route('/')
+def home():
+    return "Bot is alive!"
 
 # --- FILTRAGE ---
 banned_terms = [
@@ -114,12 +123,10 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     username = user.username or user.first_name or str(user.id)
 
-    # ⛔ Ignore banned users
     if user.id in banned_users:
         await context.bot.send_message(chat_id=OWNER_ID, text=f"🚫 Ignored message from banned user {username} ({user.id})")
         return
 
-    # 🔁 Forward to OWNER_ID
     try:
         await context.bot.forward_message(
             chat_id=OWNER_ID,
@@ -129,7 +136,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except Exception as e:
         logging.warning(f"Erreur lors du forward au OWNER_ID : {e}")
 
-    # 🔍 Filtrage
     if has_banned_content(msg):
         await update.message.reply_text(
             "🚫 This link contains prohibited terms and will not be published.",
@@ -197,18 +203,18 @@ async def auto_post(context: ContextTypes.DEFAULT_TYPE):
 
 # --- MAIN ---
 if __name__ == "__main__":
+    # Lancer un serveur HTTP séparé pour ping Render/UptimeRobot
+    threading.Thread(target=lambda: status_app.run(host="0.0.0.0", port=8080)).start()
+
     app = ApplicationBuilder().token(TOKEN).build()
 
-    # HANDLERS
     app.add_handler(CommandHandler("start", start_command))
     app.add_handler(CommandHandler("help", help_command))
     app.add_handler(MessageHandler(filters.TEXT & filters.ChatType.PRIVATE, handle_message))
 
-    # JOB SCHEDULER
     job_queue: JobQueue = app.job_queue
     job_queue.run_repeating(auto_post, interval=3 * 60 * 60, first=5)
 
-    # WEBHOOK (Render)
     app.run_webhook(
         listen="0.0.0.0",
         port=int(os.environ.get("PORT", 10000)),
