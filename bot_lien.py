@@ -179,11 +179,10 @@ async def auto_post(context: ContextTypes.DEFAULT_TYPE):
             "- Any content that violates laws or Telegram’s Terms of Service\n\n"
             "🚫 <b>Any violation of these rules will result in an immediate and permanent ban.</b>\n\n"
             "⚠️ <b>Note:</b> Random Telegram invite links may include blocked terms like 'CP'. If rejected, regenerate a new link.\n\n"
-            "✅ To share a Telegram link, message the bot: @RainbowLinkHub_bot"
+            "✅ To share a Telegram link, message the bot: @RainbowLinkHub_bot""\n"
         ),
         disable_web_page_preview=True,
         parse_mode="HTML"
-        "\n"
     )
     save_message_id(message.message_id)
 
