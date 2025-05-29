@@ -46,6 +46,9 @@ def has_banned_content(text):
 def contains_telegram_link(text):
     return re.search(r"(https?://)?t\.me/[\w\d@+\-_/=]+", text)
 
+def is_blocked_telegram_link(text):
+    return "t.me/refersharelinks" in text.lower().replace(" ", "")
+
 # --- UTILISATEURS BLOQUÉS ---
 banned_users = [
     # Ajouter ici les user_id à bloquer
@@ -91,8 +94,6 @@ WELCOME_MESSAGE = (
     "\n"
     "🚫 <b>Any violation of these rules will result in an immediate and permanent ban.</b>\n"
     "\n"
-    "⚠️ <b>Note:</b> Random Telegram invite links /+abc<b>CP</b>xyz may accidentally contain letter combinations like 'CP' that match our content filters.If your link is rejected for this reason, please regenerate a new one.\n"
-    "\n"
     "✅ To submit a link, simply paste a valid Telegram link here.\n"
     "If accepted, it will be published to the group."
     "\n"
@@ -137,6 +138,14 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await context.bot.send_message(chat_id=OWNER_ID, text=f"❌ Message from {username} was blocked.")
         return
 
+    if is_blocked_telegram_link(msg):
+        await update.message.reply_text(
+            "🚫 This specific Telegram link is not allowed and has been refused.",
+            parse_mode="HTML"
+        )
+        await context.bot.send_message(chat_id=OWNER_ID, text=f"❌ Message from {username} was blocked due to forbidden Telegram link.")
+        return
+
     if contains_telegram_link(msg):
         await context.bot.send_message(
             chat_id=GROUP_ID,
@@ -179,7 +188,7 @@ async def auto_post(context: ContextTypes.DEFAULT_TYPE):
             "- Scams or fraudulent content\n"
             "- Any content that violates laws or Telegram’s Terms of Service\n\n"
             "🚫 <b>Any violation of these rules will result in an immediate and permanent ban.</b>\n\n"
-            "✅ To share a Telegram link, message the bot: @RainbowLinkHub_bot""\n"
+            "✅ To share a Telegram link, message the bot: @RainbowLinkHub_bot\n"
         ),
         disable_web_page_preview=True,
         parse_mode="HTML"
