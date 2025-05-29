@@ -69,6 +69,7 @@ def load_message_id():
 WELCOME_MESSAGE = (
     "\n"
     "👋 <b>Welcome!</b>\n"
+    "\n"
     "<b>This bot is intended solely for sharing Gay Telegram links with adult content (18+).</b>\n"
     "\n"
     "🤖 This bot does not reply to messages. It is only designed to receive valid Telegram links.\n"
