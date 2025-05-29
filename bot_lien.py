@@ -67,10 +67,12 @@ def load_message_id():
 
 # --- MESSAGE D’ACCUEIL ---
 WELCOME_MESSAGE = (
+    "\n"
     "👋 <b>Welcome!</b>\n"
     "<b>This bot is intended solely for sharing Gay Telegram links with adult content (18+).</b>\n"
     "\n"
     "🤖 This bot does not reply to messages. It is only designed to receive valid Telegram links.\n"
+    "\n"
     "🚫 No external links (social media, websites, file hosts, etc.), paid links, or story links will be accepted.\n"
     "\n"
     "🚫 <b>Strictly prohibited content:</b>\n"
@@ -88,11 +90,11 @@ WELCOME_MESSAGE = (
     "\n"
     "🚫 <b>Any violation of these rules will result in an immediate and permanent ban.</b>\n"
     "\n"
-    "⚠️ <b>Note:</b> Random Telegram invite links (e.g. t.me/+abcCPxyz) may accidentally contain letter combinations like 'CP' that match our content filters.\n"
-    "If your link is rejected for this reason, please regenerate a new one.\n"
+    "⚠️ <b>Note:</b> Random Telegram invite links /+abc<b>CP</b>xyz may accidentally contain letter combinations like 'CP' that match our content filters.If your link is rejected for this reason, please regenerate a new one.\n"
     "\n"
     "✅ To submit a link, simply paste a valid Telegram link here.\n"
     "If accepted, it will be published to the group."
+    "\n"
 )
 
 # --- HANDLERS ---
@@ -158,11 +160,13 @@ async def auto_post(context: ContextTypes.DEFAULT_TYPE):
     message = await context.bot.send_message(
         chat_id=GROUP_ID,
         text=(
-            "\n\n🔞 <b>Gay Telegram links only. Adults 18+.</b>\n\n"
+            "\n"
+            "🔞 <b>Gay Telegram links only. Adults 18+.</b>\n\n"
             "This is a participative project — feel free to share your best Telegram group or channel link!\n\n"
             "🚫 <b>No paid, financially motivated, or story links</b>\n\n"
             "🚫 <b>Strictly prohibited content:</b>\n"
-            "- Any material involving minors (CP or any child-related content, real or fictional)\n"
+            "\n"
+            "- Any material involving minors (CP real or fictional)\n"
             "- Zoophilia or bestiality\n"
             "- Non-consensual content (rape, voyeurism, revenge porn, etc.)\n"
             "- Extreme violence or mutilation\n"
@@ -179,6 +183,7 @@ async def auto_post(context: ContextTypes.DEFAULT_TYPE):
         ),
         disable_web_page_preview=True,
         parse_mode="HTML"
+        "\n"
     )
     save_message_id(message.message_id)
 
