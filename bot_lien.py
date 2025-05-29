@@ -65,7 +65,7 @@ def load_message_id():
     except:
         return None
 
-# --- MESSAGES D’ACCUEIL & RÈGLES ---
+# --- MESSAGE D’ACCUEIL ---
 WELCOME_MESSAGE = (
     "👋 <b>Welcome!</b>\n"
     "<b>This bot is intended solely for sharing Gay Telegram links with adult content (18+).</b>\n"
@@ -88,7 +88,7 @@ WELCOME_MESSAGE = (
     "\n"
     "🚫 <b>Any violation of these rules will result in an immediate and permanent ban.</b>\n"
     "\n"
-    "⚠️ <b>Note:</b> Random Telegram invite links /+abc<b>CP</b>xyz) may accidentally contain letter combinations like 'CP' that match our content filters.\n"
+    "⚠️ <b>Note:</b> Random Telegram invite links (e.g. t.me/+abcCPxyz) may accidentally contain letter combinations like 'CP' that match our content filters.\n"
     "If your link is rejected for this reason, please regenerate a new one.\n"
     "\n"
     "✅ To submit a link, simply paste a valid Telegram link here.\n"
@@ -97,10 +97,10 @@ WELCOME_MESSAGE = (
 
 # --- HANDLERS ---
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text(WELCOME_MESSAGE)
+    await update.message.reply_text(WELCOME_MESSAGE, parse_mode="HTML")
 
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text(WELCOME_MESSAGE)
+    await update.message.reply_text(WELCOME_MESSAGE, parse_mode="HTML")
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_chat.type != "private":
@@ -127,7 +127,10 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     # 🔍 Filtrage
     if has_banned_content(msg):
-        await update.message.reply_text("🚫 This link contains prohibited terms and will not be published.")
+        await update.message.reply_text(
+            "🚫 This link contains prohibited terms and will not be published.",
+            parse_mode="HTML"
+        )
         await context.bot.send_message(chat_id=OWNER_ID, text=f"❌ Message from {username} was blocked.")
         return
 
@@ -137,7 +140,10 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             text=f"‎\n‎\n🔗 {msg.strip()} \n‎\n‎",
             disable_web_page_preview=True
         )
-        await update.message.reply_text("✅ Your link has been published successfully.")
+        await update.message.reply_text(
+            "✅ Your link has been published successfully.",
+            parse_mode="HTML"
+        )
         await context.bot.send_message(chat_id=OWNER_ID, text=f"✅ Message from {username} was published.")
 
 # --- MESSAGE RÉCURRENT ---
@@ -166,11 +172,13 @@ async def auto_post(context: ContextTypes.DEFAULT_TYPE):
             "- Terrorist or extremist propaganda\n"
             "- Sale of drugs or weapons\n"
             "- Scams or fraudulent content\n"
-            "- Any content that violates laws or Telegram’s Terms of Service\n"
+            "- Any content that violates laws or Telegram’s Terms of Service\n\n"
             "🚫 <b>Any violation of these rules will result in an immediate and permanent ban.</b>\n\n"
+            "⚠️ <b>Note:</b> Random Telegram invite links may include blocked terms like 'CP'. If rejected, regenerate a new link.\n\n"
             "✅ To share a Telegram link, message the bot: @RainbowLinkHub_bot"
         ),
-    disable_web_page_preview=True
+        disable_web_page_preview=True,
+        parse_mode="HTML"
     )
     save_message_id(message.message_id)
 
