@@ -188,7 +188,7 @@ async def auto_post(context: ContextTypes.DEFAULT_TYPE):
             "- Scams or fraudulent content\n"
             "- Any content that violates laws or Telegram’s Terms of Service\n\n"
             "🚫 <b>Any violation of these rules will result in an immediate and permanent ban.</b>\n\n"
-            "✅ To share a Telegram link, message the bot: @RainbowLinkHub_bot\n"
+            "✅ To share a Telegram link, message the bot: @GayLinkZone_Bot\n"
         ),
         disable_web_page_preview=True,
         parse_mode="HTML"
