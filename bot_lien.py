@@ -122,6 +122,10 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # ⛔ Ignore banned users
     if user.id in banned_users:
         await context.bot.send_message(chat_id=OWNER_ID, text=f"🚫 Ignored message from banned user {user_identity}")
+        await update.message.reply_text(
+            f"🚫 You are blocked from using this bot.\n👤 Your profile: {user_identity}",
+            parse_mode="HTML"
+        )
         return
 
     # 🔁 Forward to OWNER_ID
@@ -137,7 +141,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # 🔍 Filtrage
     if has_banned_content(msg):
         await update.message.reply_text(
-            "🚫 This link contains prohibited terms and will not be published.",
+            f"🚫 This link contains prohibited terms and will not be published.\n👤 Your profile: {user_identity}",
             parse_mode="HTML"
         )
         await context.bot.send_message(chat_id=OWNER_ID, text=f"❌ Message from {user_identity} was blocked.")
@@ -145,7 +149,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if is_blocked_telegram_link(msg):
         await update.message.reply_text(
-            "🚫 This specific Telegram link is not allowed and has been refused.",
+            f"🚫 This specific Telegram link is not allowed and has been refused.\n👤 Your profile: {user_identity}",
             parse_mode="HTML"
         )
         await context.bot.send_message(chat_id=OWNER_ID, text=f"❌ Message from {user_identity} was blocked due to forbidden Telegram link.")
@@ -158,7 +162,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             disable_web_page_preview=True
         )
         await update.message.reply_text(
-            "✅ Your link has been published successfully.",
+            f"✅ Your link has been published successfully.\n👤 Sent from: {user_identity}",
             parse_mode="HTML"
         )
         await context.bot.send_message(chat_id=OWNER_ID, text=f"✅ Message from {user_identity} was published.")
