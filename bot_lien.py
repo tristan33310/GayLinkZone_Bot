@@ -112,11 +112,16 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     msg = update.message.text.strip()
     user = update.effective_user
-    username = user.username or user.first_name or str(user.id)
+
+    # Infos utilisateur enrichies
+    first_name = user.first_name or "N/A"
+    username = f"@{user.username}" if user.username else "N/A"
+    user_id = user.id
+    user_identity = f"{first_name} ({username}, ID: {user_id})"
 
     # ⛔ Ignore banned users
     if user.id in banned_users:
-        await context.bot.send_message(chat_id=OWNER_ID, text=f"🚫 Ignored message from banned user {username} ({user.id})")
+        await context.bot.send_message(chat_id=OWNER_ID, text=f"🚫 Ignored message from banned user {user_identity}")
         return
 
     # 🔁 Forward to OWNER_ID
@@ -135,7 +140,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "🚫 This link contains prohibited terms and will not be published.",
             parse_mode="HTML"
         )
-        await context.bot.send_message(chat_id=OWNER_ID, text=f"❌ Message from {username} was blocked.")
+        await context.bot.send_message(chat_id=OWNER_ID, text=f"❌ Message from {user_identity} was blocked.")
         return
 
     if is_blocked_telegram_link(msg):
@@ -143,7 +148,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "🚫 This specific Telegram link is not allowed and has been refused.",
             parse_mode="HTML"
         )
-        await context.bot.send_message(chat_id=OWNER_ID, text=f"❌ Message from {username} was blocked due to forbidden Telegram link.")
+        await context.bot.send_message(chat_id=OWNER_ID, text=f"❌ Message from {user_identity} was blocked due to forbidden Telegram link.")
         return
 
     if contains_telegram_link(msg):
@@ -156,7 +161,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "✅ Your link has been published successfully.",
             parse_mode="HTML"
         )
-        await context.bot.send_message(chat_id=OWNER_ID, text=f"✅ Message from {username} was published.")
+        await context.bot.send_message(chat_id=OWNER_ID, text=f"✅ Message from {user_identity} was published.")
 
 # --- MESSAGE RÉCURRENT ---
 async def auto_post(context: ContextTypes.DEFAULT_TYPE):
